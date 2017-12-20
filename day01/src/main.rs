@@ -1,6 +1,19 @@
 use std::fs::File;
 use std::io::prelude::*;
 
+fn search_sum(chars: &Vec<char>, search_offset: usize) -> u32 {
+    const RADIX: u32 = 10;
+
+    let mut sum = 0;
+    for (i, current) in chars.iter().enumerate() {
+        let next = chars.iter().cycle().nth(i + search_offset).unwrap();
+        if current == next {
+            sum += current.to_digit(RADIX).unwrap();
+        }
+    }
+    sum
+}
+
 fn main() {
     let mut f = File::open("input.txt").expect("File not found!");
 
@@ -8,20 +21,12 @@ fn main() {
     f.read_to_string(&mut contents)
         .expect("something went wrong reading the file!");
 
-    let mut chars: Vec<char> = contents.chars().collect();
-    chars.extend(contents.chars().take(1));
+    let chars: Vec<char> = contents.chars().collect();
 
-    const RADIX: u32 = 10;
+    // part 1
+    assert_eq!(1177, search_sum(&chars, 1));
+    
+    // part 2
+    assert_eq!(1060, search_sum(&chars, chars.len()/2));
 
-    let mut sum = 0;
-    let mut iter = chars.iter().peekable();
-    while let Some(current) = iter.next() {
-        if let Some(next) = iter.peek() {
-            if current == *next {
-                sum += current.to_digit(RADIX).unwrap();
-            }
-        }
-    }
-
-    assert_eq!(1177, sum);
 }
