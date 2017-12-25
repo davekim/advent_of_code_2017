@@ -1,32 +1,33 @@
-class Square
-  attr_accessor :x, :y, :number
-
-  def initialize(x, y, number)
-    @x = x
-    @y = y
-    @number = number
-  end
-
-  def to_s
-    "(#{@x}, #{@y}): #{@number}"
-  end
-end
+Point = Struct.new(:x, :y)
+Square = Struct.new(:point, :number, :sum)
 
 class SpiralMemory
-  attr_accessor :squares
+  attr_accessor :squares, :first_with_larger_sum
 
   def initialize(capacity)
     @squares = []
+    @point_to_sum = {}
     @capacity = capacity
+    @first_with_larger_sum = nil
+
     _draw
   end
 
-  def access_port
-    @squares.first
+  def _calculate_sum(x, y)
+    _adjacent_squares(x, y).inject(0) { |acc, x| acc + x }
   end
 
-  def square(number)
-    @squares.find { |s| s.number == number }
+  def _adjacent_squares(x, y)
+    top_left = @point_to_sum[Point.new(x-1, y+1)]
+    top = @point_to_sum[Point.new(x, y+1)]
+    top_right = @point_to_sum[Point.new(x+1, y+1)]
+    left = @point_to_sum[Point.new(x-1, y)]
+    right = @point_to_sum[Point.new(x+1, y)]
+    bot_left = @point_to_sum[Point.new(x-1, y-1)]
+    bot = @point_to_sum[Point.new(x, y-1)]
+    bot_right = @point_to_sum[Point.new(x+1, y-1)]
+
+    [top_left, top, top_right, left, right, bot_left, bot, bot_right].compact
   end
 
   def _draw
@@ -35,64 +36,71 @@ class SpiralMemory
     down = 2
     right = 2
 
-    @squares.push(Square.new(0, 0, 1))
+    origin = Point.new(0, 0)
+    @squares.push(Square.new(origin, 1, 1))
+    @point_to_sum[origin] = 1
 
     while @squares.size < @capacity
-      add_right
+      add_square(1, 0)
 
       up.times do
-        add_up
+        add_square(0, 1)
       end
       up += 2
 
       left.times do
-        add_left
+        add_square(-1, 0)
       end
       left += 2
 
       down.times do
-        add_down
+        add_square(0, -1)
       end
       down += 2
 
       right.times do
-        add_right
+        add_square(1, 0)
       end
       right += 2
     end
   end
 
-  def add_right
-    last = @squares.last
-    @squares.push(Square.new(last.x + 1, last.y, last.number + 1))
-  end
+  def add_square(dx, dy)
+    new_x = @squares.last.point.x + dx
+    new_y = @squares.last.point.y + dy
+    new_point = Point.new(new_x, new_y)
 
-  def add_up
-    last = @squares.last
-    @squares.push(Square.new(last.x, last.y + 1, last.number + 1))
-  end
+    sum = nil
+    if @first_with_larger_sum.nil?
+      sum = _calculate_sum(new_x, new_y)
+      if sum > @capacity
+        @first_with_larger_sum = sum
+      else
+        @point_to_sum[new_point] = sum
+      end
+    end
 
-  def add_left
-    last = @squares.last
-    @squares.push(Square.new(last.x - 1, last.y, last.number + 1))
-  end
-
-  def add_down
-    last = @squares.last
-    @squares.push(Square.new(last.x, last.y - 1, last.number + 1))
+    @squares.push(Square.new(new_point, @squares.last.number + 1, sum))
   end
 
   def print
-    @squares.each { |s| puts s.to_s }
+    @squares.each { |point, square| puts square.to_s }
   end
 end
 
-def manhattan_distance(square_a, square_b)
-  return (square_a.x-square_b.x).abs + (square_a.y-square_b.y).abs
+def manhattan_distance(a, b)
+  return (a.point.x-b.point.x).abs + (a.point.y-b.point.y).abs
 end
 
 if __FILE__ == $0
-  part_one_input = 289326
-  spiral = SpiralMemory.new(part_one_input)
-  puts "Part 1: #{manhattan_distance(spiral.access_port, spiral.square(part_one_input))}"
+  puzzle_input = 289326
+  spiral = SpiralMemory.new(puzzle_input)
+
+  # 419
+  access_port = spiral.squares.first
+  requested_square = spiral.squares.find { |square| square.number == puzzle_input }
+  puts "Part 1: #{manhattan_distance(access_port, requested_square)}"
+
+  # 295229
+  puts "Part 2: #{spiral.first_with_larger_sum}"
 end
