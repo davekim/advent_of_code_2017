@@ -1,7 +1,6 @@
 require 'set'
 
-if __FILE__ == $0
-  banks = File.read("input.txt").split(" ").map(&:to_i)
+def redistribute(banks)
   configurations = Set.new
   redist_cycles = 0
   c = banks.join(" ")
@@ -23,6 +22,15 @@ if __FILE__ == $0
     redist_cycles += 1
   end
 
+  redist_cycles
+end
+
+if __FILE__ == $0
+  banks = File.read("input.txt").split(" ").map(&:to_i)
+
   # 14029
-  puts "Part 1: #{redist_cycles}"
+  puts "Part 1: #{redistribute(banks)}"
+
+  # 2765
+  puts "Part 2: #{redistribute(banks)}"
 end
